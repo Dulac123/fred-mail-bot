@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
@@ -173,8 +174,15 @@ def gemini_sazetak(mejlovi, razlog):
         url, data=body,
         headers={"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY},
     )
-    with urllib.request.urlopen(req, timeout=60) as r:
-        out = json.load(r)
+    for pokusaj in range(4):  # Gemini zna da bude privremeno preopterećen (503/429)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                out = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 503) or pokusaj == 3:
+                raise
+            time.sleep(10 * (pokusaj + 1))
     return out["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
