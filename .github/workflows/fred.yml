@@ -2,7 +2,7 @@ name: Fred mejl bot
 
 on:
   schedule:
-    - cron: "*/20 * * * *"   # na svakih 20 minuta (UTC)
+    - cron: "7,27,47 * * * *"   # na svakih ~20 min, van gužve na punim minutima (UTC)
   workflow_dispatch:          # ručno pokretanje iz Actions taba
 
 permissions:

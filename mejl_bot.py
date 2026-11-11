@@ -201,7 +201,8 @@ def telegram_api(metoda, **params):
 
 def posalji_telegram(tekst):
     for i in range(0, len(tekst), 4000):  # limit poruke je 4096 znakova
-        telegram_api("sendMessage", chat_id=TELEGRAM_CHAT_ID, text=tekst[i:i + 4000])
+        r = telegram_api("sendMessage", chat_id=TELEGRAM_CHAT_ID, text=tekst[i:i + 4000])
+        print(f"Telegram: poslato (message_id={r['result']['message_id']}, chat={r['result']['chat']['id']})")
 
 
 # ------------------------------------------------------------------ glavna logika
