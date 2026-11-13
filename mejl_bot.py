@@ -46,7 +46,8 @@ IMAP_SERVER = os.environ.get("IMAP_SERVER", "imap.gmail.com")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_MODELI = [m.strip() for m in (os.environ.get("GEMINI_MODELI") or
+                 "gemini-3-flash-preview,gemini-3.1-flash-lite,gemini-3.5-flash").split(",") if m.strip()]
 
 PRAG_MEJLOVA = int(os.environ.get("PRAG_MEJLOVA") or 4)          # koliko novih mejlova okida sažetak tokom dana
 DNEVNI_POCETAK = 7        # sati: od kad važi pravilo "4 mejla"
@@ -168,22 +169,32 @@ def gemini_sazetak(mejlovi, razlog):
         "Neka poruka bude kratka i pregledna, ne piši roman. "
         + (f"Dodatne želje u stilu: {STIL}\n\n" if STIL else "\n\n") + tekst
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode()
-    req = urllib.request.Request(
-        url, data=body,
-        headers={"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY},
-    )
-    for pokusaj in range(4):  # Gemini zna da bude privremeno preopterećen (503/429)
-        try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                out = json.load(r)
-            break
-        except urllib.error.HTTPError as e:
-            if e.code not in (429, 500, 503) or pokusaj == 3:
-                raise
-            time.sleep(10 * (pokusaj + 1))
-    return out["candidates"][0]["content"]["parts"][0]["text"].strip()
+    poslednja = None
+    for model in GEMINI_MODELI:  # ako jedan model ne radi/sporo je, probamo sledeći
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        for pokusaj in range(2):
+            req = urllib.request.Request(
+                url, data=body,
+                headers={"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY},
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    out = json.load(r)
+                tekst = out["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if tekst:
+                    print(f"Gemini: {model} OK")
+                    return tekst
+                poslednja = f"{model}: prazan odgovor"
+            except urllib.error.HTTPError as e:
+                poslednja = f"{model}: HTTP {e.code}"
+                if e.code not in (429, 500, 503):
+                    break  # npr. 404 (model ne postoji) -> odmah sledeći model
+            except Exception as e:  # timeout, mrežna greška, neočekivan odgovor
+                poslednja = f"{model}: {type(e).__name__}: {e}"
+            print(f"Gemini problem ({poslednja}), pokušaj {pokusaj + 1}")
+            time.sleep(5)
+    raise RuntimeError(f"Nijedan Gemini model nije odgovorio ({poslednja})")
 
 
 def osnovni_sazetak(mejlovi):
@@ -285,10 +296,11 @@ def jedan_krug(stanje):
             posalji_sazetak(f"Stiglo je {n} novih mejlova", stanje)
 
 
-def petlja():
+def petlja(sati=None):
     stanje = pripremi_stanje()
-    print("Bot radi. Ctrl+C za prekid.")
-    while True:
+    rok = time.time() + sati * 3600 if sati else None
+    print("Bot radi." + (f" Radim još {sati} h pa završavam." if sati else " Ctrl+C za prekid."))
+    while rok is None or time.time() < rok:
         try:
             jedan_krug(stanje)
         except KeyboardInterrupt:
@@ -328,6 +340,11 @@ if __name__ == "__main__":
             m = dohvati_mejl(mail, u)
             print(f"[{m['uid']}] Od: {m['od']}\n     Naslov: {m['naslov']}\n     Tekst: {m['telo'][:100]!r}\n")
         mail.logout()
+
+    elif arg == "--sati":
+        # radi N sati u petlji pa završi (GitHub Actions ga posle toga sam ponovo pokrene)
+        proveri_podesavanja("EMAIL", "PASSWORD", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
+        petlja(float(sys.argv[2]))
 
     elif arg == "--once":
         # jedna provera pa kraj (za server/cron/GitHub Actions)
