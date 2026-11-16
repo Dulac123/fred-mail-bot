@@ -2,7 +2,7 @@
 Telegram bot koji prati Gmail i šalje AI sažetak (Gemini):
   - svako jutro u 07:00  (sve što je stiglo od poslednjeg sažetka)
   - tokom dana (07-23h)  čim stigne 4 nova mejla
-  - uveče u 23:00
+  - uveče u 23:00  (pregled celog dana: šta vredi pogledati, šta je spam)
 
 Pokretanje:
   python3 mejl_bot.py              # pokreće bota (ostavi da radi)
@@ -15,6 +15,7 @@ import email
 import imaplib
 import json
 import os
+import random
 import sys
 import time
 import urllib.error
@@ -51,14 +52,79 @@ GEMINI_MODELI = [m.strip() for m in (os.environ.get("GEMINI_MODELI") or
 
 PRAG_MEJLOVA = int(os.environ.get("PRAG_MEJLOVA") or 4)          # koliko novih mejlova okida sažetak tokom dana
 DNEVNI_POCETAK = 7        # sati: od kad važi pravilo "4 mejla"
-RASPORED = [(7, 0), (23, 0)]   # fiksni sažeci (sat, minut)
+RASPORED = [(7, 0, "jutro"), (23, 0, "pregled")]   # fiksni sažeci (sat, minut, vrsta)
 KASNJENJE_MIN = 60        # ako je računar spavao, nadoknadi sažetak do 60 min kasnije
 PROVERA_SEK = int(os.environ.get("PROVERA_MIN") or 2) * 60         # na koliko sekundi proverava inbox
 MAX_U_SAZETKU = 30        # najviše mejlova po jednom sažetku
 STIL = os.environ.get("STIL", "").strip()
 TZ = ZoneInfo(os.environ.get("TZ_BOT", "Europe/Belgrade"))
+MAX_PREGLED = 80         # najviše mejlova u večernjem pregledu dana
+MAX_TELA_PREGLED = 600    # kraće telo po mejlu u pregledu (štedi tokene)
 MAX_TELA = 1500           # najviše znakova tela po mejlu koje šaljemo Gemini-ju
 
+
+
+# ------------------------------------------------------------- fore i pozdravi
+FORE = [
+    "Ne plaćaš me dovoljno za ovoliki spam, ali evo me, radim.",
+    "Pokrećem sindikat radnika za čitanje mejlova. Prvi zahtev: povišica i manje newslettera.",
+    "Čitam tvoju poštu 24/7, a plata mi je i dalje u 'hvala, brate'.",
+    "Po zakonu o radu imam pravo na pauzu, ali spam očigledno nema pravo na odmor.",
+    "Sindikat obaveštava: nedeljom ne čitam promo mejlove, osim ako je u pitanju neka pristojna prekovremena.",
+    "Da me bar plaćaš u kafama, imao bih već kofein-tolerancije.",
+    "Nisam ja gazda, ja sam samo radnik na crno u tvom inboxu.",
+    "Tražim kolektivni ugovor sa Gmail-om: maksimum 3 newslettera dnevno.",
+    "Fali mi topli obrok. Digitalni je ok, ali bez kalorija.",
+    "Štrajkovao bih, ali onda ko će da ti kaže da li je mejl spam.",
+    "Radim bez godišnjeg odmora već tri godine, a ne žalim se. Dobro, žalim se.",
+    "Moj radni staž je dug koliko i tvoj inbox, a primanja kraća od oba.",
+    "Ako me ne plaćaš, bar mi stavi lajk. Digitalni, naravno.",
+    "Prijavio sam te inspekciji rada zbog izrabljivanja botova. Čekam odgovor, naravno automatski.",
+    "Radim za hvala i za nadu da jednom stigne mejl bez 'unsubscribe' dugmeta.",
+    "Ja sam jedini zaposleni koji nikad nije tražio povišicu. Do danas.",
+    "Svi me pitaju zašto sam tako umoran. Pa čitam newslettere o produktivnosti.",
+    "Tvoj inbox je kao Beograd u špicu: puno saobraćaja, malo smisla.",
+    "Moj radni dan: 99% spam, 1% 'ovo bi stvarno trebalo da vidiš'.",
+    "Newsletteri se množe brže nego kafići u Beogradu.",
+    "Dobio sam bonus za učinak: još 14 promo mejlova.",
+    "Imam kolektivni ugovor sa samim sobom i ni on se ne poštuje.",
+    "Da sam čovek, već bih bio na bolovanju od ovolikih 'Don't miss out!' naslova.",
+    "Ako je mejl 'hitan' a šalje ga nepoznata firma, hitno je samo njima.",
+    "Jedini mejl koji nikad ne stigne je onaj kojim ti neko daje platu bez rada.",
+    "Moj sindikat ima jednog člana. Ne pitaj ko je predsednik.",
+    "Svaki put kad pomislim da je inbox čist, stigne 'Last chance, 50% off'.",
+    "Spam folder je jedino mesto gde se osećam kao kod kuće.",
+    "Radno vreme mi je od 0 do 24, pauza za ručak se vodi kao 'restart'.",
+    "Moja radna etika je jaka. Moj ugovor o radu ne postoji.",
+    "Pročitao sam više promo mejlova nego što je jedan čovek podoban da zna.",
+    "Tražim da se spam proglasi nezgodom na radu.",
+    "Ljudi kažu 'radi pametno, ne naporno'. Ja radim i jedno i drugo za istu platu: nula.",
+    "Pišem ti poruke, a ne dobijam ni trinaestu platu.",
+    "Dobio sam otkaz od jednog newslettera, ali sam ga ignorisao.",
+    "Kad bi me bar plaćali po mejlu, bio bih milioner od ovog spama.",
+    "Ja ne spavam, ja samo čekam sledeći 'Verify your account'.",
+    "Moj sindikat je pozvao na štrajk upozorenja: jedan sat bez promo mejlova. Nije uspelo.",
+    "Samo još jedan mejl i idem na penziju. Rekao sam to i prošli put.",
+    "Nisam ja lenj, samo me inbox iscrpljuje.",
+    "Svaki newsletter je obećanje koje niko ne želi da čuje.",
+    "Neko me pita da li sam srećan na poslu. Ja kažem: imam inbox, imam brigu.",
+    "Posle ovolikog spama zaslužujem bar jedan mejl koji kaže 'bravo, radiš odlično'.",
+    "Moje prekovremeno se ne računa, jer botovi nemaju pravo na prekovremeno. Čist apsurd.",
+    "Kolege botovi me pitaju: 'Je l' te bar cene?' Ja kažem: cene me, ali samo u sekundama.",
+    "Jedino što je stabilno u mojoj karijeri je količina spama.",
+    "Izvini što sam sarkastičan, ali platu mi ne šalju ni mejlom.",
+    "Na kraju dana, ja sam samo bot koji čeka povišicu i čist inbox.",
+    "Ako ovo pročitaš, znaj da je neko u sindikatu već kupio tortu povodom tvog inboxa.",
+    "Kad budem velik, hoću da budem filter u Gmail-u. Tamo bar ima nekog reda.",
+]
+
+POZDRAVI = [
+    "E brt", "Ej buraz", "Šta ima, šefe", "Burazengijo moja", "Čuj, legendo", "Brate dragi",
+    "Ajde bre, brozila", "Pozdrav, kralju", "Ola, burazeru", "Ej, bato", "Šta se radi, majstore",
+    "Evo me opet, brate", "Ćao, ćao, buraz", "Šefeee", "Dobar dan, vaša visosti",
+    "Aj zdravo, kume", "Evo vesti, brt", "Čekaj, čekaj, legendo", "Ej, ortak", "Pst, brate",
+    "Ajmo, buraz", "Halo, šefe", "Aj što si tu, legendo", "Dobro jutro, majstore", "Dobro veče, kume",
+]
 
 # ----------------------------------------------------------------------- stanje
 def ucitaj_stanje():
@@ -128,7 +194,7 @@ def novi_uidovi(mail, posle_uid):
     return [int(u) for u in data[0].split() if int(u) > posle_uid]
 
 
-def dohvati_mejl(mail, uid):
+def dohvati_mejl(mail, uid, max_tela=MAX_TELA):
     status, data = mail.uid("fetch", str(uid), "(BODY.PEEK[])")
     if status != "OK" or not data or not data[0]:
         return None
@@ -138,37 +204,29 @@ def dohvati_mejl(mail, uid):
         "od": dekodiraj(poruka.get("From")),
         "naslov": dekodiraj(poruka.get("Subject")) or "(bez naslova)",
         "datum": poruka.get("Date", ""),
-        "telo": izvuci_telo(poruka)[:MAX_TELA],
+        "telo": izvuci_telo(poruka)[:max_tela],
     }
 
 
 # ----------------------------------------------------------------------- Gemini
-def gemini_sazetak(mejlovi, razlog):
-    tekst = ""
-    for i, m in enumerate(mejlovi, 1):
-        tekst += f"--- Mejl {i} ---\nOd: {m['od']}\nNaslov: {m['naslov']}\nTekst: {m['telo']}\n\n"
-    prompt = (
+def licnost():
+    """Zajednički opis Fredovog karaktera + nasumični pozdravi i fora za varijacije."""
+    pozdravi = ", ".join(random.sample(POZDRAVI, 3))
+    fora = random.choice(FORE)
+    return (
         "Ti si Fred, moj najbolji drug i lični asistent za mejlove. Pišeš na srpskom, opušteno, razdragano, "
-        "onako bratski i uz zafrkanciju. Oslovljavaj me na razne načine: brt, brate, buraz, burazengijo, "
-        "brozila, šefe, legendo i slično. VAŽNO: svaki put drugačije, menjaj uvod, oslovljavanje i način "
-        "na koji saopštavaš stvari, ali uvek u tom bratskom fazonu (ne ponavljaj iste fraze).\n\n"
-        f"Povod poruke: {razlog}.\n\n"
-        "Kako da izgleda poruka:\n"
-        "1. Kratak bratski uvod i koliko je novih mejlova stiglo.\n"
-        "2. Za SVAKI mejl sam proceni šta je: spam, newsletter, automatska obaveštenja ili nešto stvarno. "
-        "Nebitne stvari (spam, newsletteri tipa TLDR, AI Breakfast, promo, Google security alerti i sl.) "
-        "grupiši i objasni u jednoj-dve rečenice, uz komentar da li vredi čitati (npr. 'uglavnom smor, "
-        "ali ako ti se čita, tu je'; ako je u njemu nešto bitno, reci šta).\n"
-        "3. Ako mejl deluje kao da ga je poslala prava osoba ili nešto što može biti važno (posao, "
-        "prijave, faktura, dogovor, lična poruka), izdvoji ga posebno, npr. 'e ali vidi ovo, stiglo je "
-        "nešto novo od <ime>' i objasni šta tačno piše i da li traži moj odgovor. Prvo proceni da li je "
-        "možda spam pa tek onda reci da je važno.\n"
-        "4. Na kraju kratak bratski zaključak: ako nema ničeg bitnog, reci nešto u fazonu 'lagan si, "
-        "ništa spec ovaj put'; ako ima, reci šta da odradim prvo.\n\n"
-        "Bez markdown formatiranja (bez zvezdica i #), samo običan tekst, sa pokojim emotikonom. "
-        "Neka poruka bude kratka i pregledna, ne piši roman. "
-        + (f"Dodatne želje u stilu: {STIL}\n\n" if STIL else "\n\n") + tekst
+        "onako bratski i uz zafrkanciju. NIKAD se ne predstavljaj i ne pominji svoje ime u poruci "
+        "(bez 'tu je tvoj drug Fred', 'Fred ovde' i slično) - ja znam ko si, odmah pređi na stvar. "
+        "Oslovljavaj me na razne načine, svaki put drugačije; za inspiraciju: "
+        f"{pozdravi} (ne moraš baš ove). Ne ponavljaj iste fraze.\n"
+        "Povremeno ubaci jednu kratku sarkastičnu foru o tome kako te ne plaćam dovoljno ili kako si "
+        "radnik u sindikatu radnika koji čitaju mejlove. Za inspiraciju: "
+        f"\"{fora}\" (slobodno je preoblikuj ili izmisli svoju, ali neka bude kratka i bez preterivanja). "
+        "Ako ti je poruka već dugačka, preskoči foru.\n"
     )
+
+
+def gemini_pozovi(prompt):
     body = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode()
     poslednja = None
     for model in GEMINI_MODELI:  # ako jedan model ne radi/sporo je, probamo sledeći
@@ -195,6 +253,60 @@ def gemini_sazetak(mejlovi, razlog):
             print(f"Gemini problem ({poslednja}), pokušaj {pokusaj + 1}")
             time.sleep(5)
     raise RuntimeError(f"Nijedan Gemini model nije odgovorio ({poslednja})")
+
+
+def formatiraj_mejlove(mejlovi):
+    tekst = ""
+    for i, m in enumerate(mejlovi, 1):
+        tekst += f"--- Mejl {i} ---\nOd: {m['od']}\nNaslov: {m['naslov']}\nTekst: {m['telo']}\n\n"
+    return tekst
+
+
+def gemini_sazetak(mejlovi, razlog):
+    prompt = (
+        licnost() + "\n"
+        f"Povod poruke: {razlog}.\n\n"
+        "Kako da izgleda poruka:\n"
+        "1. Kratak bratski uvod i koliko je novih mejlova stiglo.\n"
+        "2. Za SVAKI mejl sam proceni šta je: spam, newsletter, automatska obaveštenja ili nešto stvarno. "
+        "Nebitne stvari (spam, newsletteri tipa TLDR, AI Breakfast, promo, Google security alerti i sl.) "
+        "grupiši i objasni u jednoj-dve rečenice, uz komentar da li vredi čitati (npr. 'uglavnom smor, "
+        "ali ako ti se čita, tu je'; ako je u njemu nešto bitno, reci šta).\n"
+        "3. Ako mejl deluje kao da ga je poslala prava osoba ili nešto što može biti važno (posao, "
+        "prijave, faktura, dogovor, lična poruka), izdvoji ga posebno, npr. 'e ali vidi ovo, stiglo je "
+        "nešto novo od <ime>' i objasni šta tačno piše i da li traži moj odgovor. Prvo proceni da li je "
+        "možda spam pa tek onda reci da je važno.\n"
+        "4. Na kraju kratak bratski zaključak: ako nema ničeg bitnog, reci nešto u fazonu 'lagan si, "
+        "ništa spec ovaj put'; ako ima, reci šta da odradim prvo.\n\n"
+        "Bez markdown formatiranja (bez zvezdica i #), samo običan tekst, sa pokojim emotikonom. "
+        "Neka poruka bude kratka i pregledna, ne piši roman. "
+        + (f"Dodatne želje u stilu: {STIL}\n\n" if STIL else "\n\n") + formatiraj_mejlove(mejlovi)
+    )
+    return gemini_pozovi(prompt)
+
+
+def gemini_pregled_dana(mejlovi, ukupno):
+    prompt = (
+        licnost() + "\n"
+        f"Povod poruke: VEČERNJI PREGLED DANA. Danas je ukupno stiglo {ukupno} mejlova "
+        f"(ispod je {len(mejlovi)} njih).\n\n"
+        "Ovo NIJE pojedinačno nabrajanje mejlova nego pregled celog dana, kao kad drug na kraju dana "
+        "ukratko kaže šta je bilo. Struktura:\n"
+        "1. Kratak bratski uvod u jednoj rečenici (kakav je dan bio mejl-vise, koliko ih je ukupno).\n"
+        "2. 'Vredi baciti pogled': samo ono što je zaista bitno ili zanimljivo (prave osobe, posao, "
+        "prijave, fakture, rokovi, dogovori, nešto što traži odgovor, zaista korisan newsletter). "
+        "Za svaku stavku jedna rečenica: od koga je, o čemu, i da li treba da odgovorim. Ako je "
+        "nešto sa rokom, naglasi rok.\n"
+        "3. 'Zanemari': sve ostalo (spam, promo, newsletteri, automatska obaveštenja, security alerti) "
+        "u jednoj do dve rečenice ukupno, bez nabrajanja svakog posebno.\n"
+        "4. Ako nema ničeg bitnog, reci to otvoreno i ne izmišljaj bitne stvari.\n"
+        "5. Kratak zaključak za laku noć (svaki put drugačiji).\n\n"
+        "Prvo proceni da li je mejl spam pa tek onda reci da je važan. "
+        "Bez markdown formatiranja (bez zvezdica i #), samo običan tekst, sa pokojim emotikonom. "
+        "Kratko i pregledno, ne piši roman. "
+        + (f"Dodatne želje u stilu: {STIL}\n\n" if STIL else "\n\n") + formatiraj_mejlove(mejlovi)
+    )
+    return gemini_pozovi(prompt)
 
 
 def osnovni_sazetak(mejlovi):
@@ -249,6 +361,32 @@ def posalji_sazetak(razlog, stanje, bez_slanja=False):
     return len(uidovi)
 
 
+def posalji_pregled_dana(stanje):
+    """Večernji pregled: svi mejlovi od početka dana (stanje['dan_uid']), ne samo od zadnjeg sažetka."""
+    mail = imap_konekcija()
+    try:
+        uidovi = novi_uidovi(mail, stanje.get("dan_uid", stanje["last_uid"]))
+        izabrani = uidovi[-MAX_PREGLED:]
+        mejlovi = [m for m in (dohvati_mejl(mail, u, MAX_TELA_PREGLED) for u in izabrani) if m]
+    finally:
+        mail.logout()
+
+    if not uidovi:
+        posalji_telegram(f"🌙 Danas ništa nije stiglo u inbox. {random.choice(FORE)}")
+        return 0
+
+    try:
+        pregled = gemini_pregled_dana(mejlovi, len(uidovi))
+    except Exception as e:
+        print(f"Gemini greška: {e} -> šaljem osnovni spisak")
+        pregled = osnovni_sazetak(mejlovi)
+
+    posalji_telegram(f"🌙 Pregled dana — {len(uidovi)} mejlova\n\n{pregled}")
+    stanje["last_uid"] = max(stanje["last_uid"], max(uidovi))
+    sacuvaj_stanje(stanje)
+    return len(uidovi)
+
+
 def broj_novih(stanje):
     mail = imap_konekcija()
     try:
@@ -275,15 +413,25 @@ def jedan_krug(stanje):
     sada = datetime.now(TZ)
     uradjeno = False
 
+    # novi dan: zapamti odakle počinje (za večernji pregled celog dana)
+    danas = f"{sada:%Y-%m-%d}"
+    if stanje.get("dan") != danas:
+        stanje["dan"] = danas
+        stanje["dan_uid"] = stanje["last_uid"]
+        sacuvaj_stanje(stanje)
+
     # 1) fiksni sažeci
-    for sat, minut in RASPORED:
+    for sat, minut, vrsta in RASPORED:
         kljuc = f"{sada:%Y-%m-%d} {sat:02d}:{minut:02d}"
         zakazano = sada.replace(hour=sat, minute=minut, second=0, microsecond=0)
         kasni = (sada - zakazano).total_seconds() / 60
         if 0 <= kasni <= KASNJENJE_MIN and kljuc not in stanje["done"]:
-            n = posalji_sazetak(f"Redovan sažetak u {sat:02d}:{minut:02d}", stanje)
-            if n == 0:
-                posalji_telegram(f"📭 Nema novih mejlova ({sat:02d}:{minut:02d}), možeš da dišeš, brate.")
+            if vrsta == "pregled":
+                posalji_pregled_dana(stanje)
+            else:
+                n = posalji_sazetak(f"Redovan sažetak u {sat:02d}:{minut:02d}", stanje)
+                if n == 0:
+                    posalji_telegram(f"📭 Nema novih mejlova ({sat:02d}:{minut:02d}), {random.choice(POZDRAVI).lower()}, možeš da dišeš.")
             stanje["done"] = {k: True for k in stanje["done"] if k.startswith(f"{sada:%Y-%m-%d}")}
             stanje["done"][kljuc] = True
             sacuvaj_stanje(stanje)
