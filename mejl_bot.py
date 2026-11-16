@@ -209,21 +209,38 @@ def dohvati_mejl(mail, uid, max_tela=MAX_TELA):
 
 
 # ----------------------------------------------------------------------- Gemini
+VESTI = []   # današnje zanimljive vesti (osvežavaju se svako veče), koriste se sutradan za fore
+
+
 def licnost():
-    """Zajednički opis Fredovog karaktera + nasumični pozdravi i fora za varijacije."""
+    """Zajednički opis Fredovog karaktera + nasumični pozdravi i (u ~70% slučajeva) fora."""
     pozdravi = ", ".join(random.sample(POZDRAVI, 3))
-    fora = random.choice(FORE)
-    return (
+    tekst = (
         "Ti si Fred, moj najbolji drug i lični asistent za mejlove. Pišeš na srpskom, opušteno, razdragano, "
         "onako bratski i uz zafrkanciju. NIKAD se ne predstavljaj i ne pominji svoje ime u poruci "
         "(bez 'tu je tvoj drug Fred', 'Fred ovde' i slično) - ja znam ko si, odmah pređi na stvar. "
         "Oslovljavaj me na razne načine, svaki put drugačije; za inspiraciju: "
         f"{pozdravi} (ne moraš baš ove). Ne ponavljaj iste fraze.\n"
-        "Povremeno ubaci jednu kratku sarkastičnu foru o tome kako te ne plaćam dovoljno ili kako si "
-        "radnik u sindikatu radnika koji čitaju mejlove. Za inspiraciju: "
-        f"\"{fora}\" (slobodno je preoblikuj ili izmisli svoju, ali neka bude kratka i bez preterivanja). "
-        "Ako ti je poruka već dugačka, preskoči foru.\n"
     )
+    if random.random() < 0.7:
+        if VESTI and random.random() < 0.6:
+            vest = random.choice(VESTI)
+            tekst += (
+                "Ubaci JEDNU kratku sarkastičnu foru (jedna rečenica) koja se vezuje za ovu skorašnju vest, "
+                "ili se vezuje za sindikat radnika koji čitaju mejlove / to što te ne plaćam dovoljno: "
+                f"\"{vest}\". Pazi: vest prenosi samo kao što je napisana, ne dodaj i ne izmišljaj detalje, "
+                "ne iznosi optužbe protiv stvarnih ljudi kao činjenice, šali se na situaciju, ne na čoveka. "
+                "Ako ne možeš da je smisleno povežeš, preskoči je.\n"
+            )
+        else:
+            tekst += (
+                "Ubaci JEDNU kratku sarkastičnu foru (jedna rečenica) o tome kako te ne plaćam dovoljno ili kako "
+                f"si radnik u sindikatu radnika koji čitaju mejlove. Za inspiraciju: \"{random.choice(FORE)}\" "
+                "(slobodno je preoblikuj ili izmisli svoju).\n"
+            )
+    else:
+        tekst += "Ovaj put BEZ sindikalnih fora, samo normalan bratski ton.\n"
+    return tekst
 
 
 def gemini_pozovi(prompt):
@@ -239,7 +256,7 @@ def gemini_pozovi(prompt):
             try:
                 with urllib.request.urlopen(req, timeout=90) as r:
                     out = json.load(r)
-                tekst = out["candidates"][0]["content"]["parts"][0]["text"].strip()
+                tekst = "".join(d.get("text", "") for d in out["candidates"][0]["content"]["parts"]).strip()
                 if tekst:
                     print(f"Gemini: {model} OK")
                     return tekst
@@ -309,6 +326,48 @@ def gemini_pregled_dana(mejlovi, ukupno):
     return gemini_pozovi(prompt)
 
 
+VESTI_FEEDOVI = [
+    "https://news.google.com/rss/search?q=(AI+OR+Nvidia+OR+OpenAI+OR+Anthropic)+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=(Trump+OR+Congress+OR+White+House)+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://hnrss.org/frontpage?count=10",
+]
+
+
+def dohvati_naslove():
+    import xml.etree.ElementTree as ET
+    naslovi = []
+    for url in VESTI_FEEDOVI:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                koren = ET.fromstring(r.read())
+            naslovi += [(i.findtext("title") or "").strip() for i in koren.iter("item")][:10]
+        except Exception as e:
+            print(f"Feed nije radio ({url[:40]}...): {e}")
+    return [n for n in naslovi if n]
+
+
+def dohvati_vesti():
+    """Pročita današnje naslove (RSS) i vrati do 5 kratkih stavki koje Fred sutra može da iskoristi za foru."""
+    naslovi = dohvati_naslove()
+    if not naslovi:
+        return []
+    prompt = (
+        "Ispod su današnji naslovi vesti (AI/tehnologija i američka politika). Izaberi 5 koje su najzanimljivije "
+        "i najpogodnije da se neko na njih zafrkava u opuštenom razgovoru. Svaku prepiši kao jednu kratku "
+        "rečenicu na srpskom, STROGO samo ono što piše u naslovu, bez dodavanja detalja i bez nagađanja. "
+        "Odgovor: tačno 5 linija, svaka počinje sa '- ', bez ičeg drugog.\n\n" + "\n".join(naslovi[:40])
+    )
+    try:
+        linije = gemini_pozovi(prompt).splitlines()
+        vesti = [l.lstrip("-• ").strip() for l in linije if l.strip().startswith(("-", "•"))][:5]
+        if vesti:
+            return vesti
+    except Exception as e:
+        print(f"Gemini nije izabrao vesti: {e}")
+    return naslovi[:5]
+
+
 def osnovni_sazetak(mejlovi):
     """Rezervna varijanta ako Gemini nije dostupan: samo pošiljaoci i naslovi."""
     return "\n".join(f"• {m['od']}\n  {m['naslov']}" for m in mejlovi)
@@ -361,6 +420,19 @@ def posalji_sazetak(razlog, stanje, bez_slanja=False):
     return len(uidovi)
 
 
+def osvezi_vesti(stanje):
+    """Svako veče zapamti današnje vesti za fore sutradan (ako ne uspe, ostaju stare)."""
+    global VESTI
+    try:
+        nove = dohvati_vesti()
+        if nove:
+            VESTI = stanje["vesti"] = nove
+            sacuvaj_stanje(stanje)
+            print(f"Vesti osvežene ({len(nove)}).")
+    except Exception as e:
+        print(f"Vesti nisu osvežene: {e}")
+
+
 def posalji_pregled_dana(stanje):
     """Večernji pregled: svi mejlovi od početka dana (stanje['dan_uid']), ne samo od zadnjeg sažetka."""
     mail = imap_konekcija()
@@ -373,6 +445,7 @@ def posalji_pregled_dana(stanje):
 
     if not uidovi:
         posalji_telegram(f"🌙 Danas ništa nije stiglo u inbox. {random.choice(FORE)}")
+        osvezi_vesti(stanje)
         return 0
 
     try:
@@ -382,6 +455,7 @@ def posalji_pregled_dana(stanje):
         pregled = osnovni_sazetak(mejlovi)
 
     posalji_telegram(f"🌙 Pregled dana — {len(uidovi)} mejlova\n\n{pregled}")
+    osvezi_vesti(stanje)
     stanje["last_uid"] = max(stanje["last_uid"], max(uidovi))
     sacuvaj_stanje(stanje)
     return len(uidovi)
@@ -404,6 +478,8 @@ def pripremi_stanje():
         mail.logout()
         print(f"Prvi start, počinjem od UID {stanje['last_uid']}.")
     stanje.setdefault("done", {})  # "datum HH:MM" -> True
+    global VESTI
+    VESTI = stanje.get("vesti", [])
     sacuvaj_stanje(stanje)
     return stanje
 
@@ -498,6 +574,22 @@ if __name__ == "__main__":
         # jedna provera pa kraj (za server/cron/GitHub Actions)
         proveri_podesavanja("EMAIL", "PASSWORD", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
         jedan_krug(pripremi_stanje())
+
+    elif arg == "--demo":
+        # test: 3 izmišljena mejla -> pravi sažetak i pregled dana na Telegram (ne dira state.json)
+        proveri_podesavanja("TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID", "GEMINI_API_KEY")
+        lazni = [
+            {"od": "TLDR AI <dan@tldrnewsletter.com>", "naslov": "TLDR AI 2026-11-16",
+             "telo": "Nvidia i OpenAI nove cene, AI agenti u svakom alatu, top 10 prompt trikova..."},
+            {"od": "Marko Jovanović <marko@digitalnastudija.rs>", "naslov": "Ponuda za sajt - treba odgovor do petka",
+             "telo": "Ćao, šaljem ponudu za izradu sajta (1.200 EUR). Javi mi do petka da li ti odgovara, pa da krenemo."},
+            {"od": "Shopify Deals <promo@deals-shop.com>", "naslov": "LAST CHANCE: 70% OFF samo danas!!!",
+             "telo": "Don't miss out! Kupi sada i uštedi. Unsubscribe."},
+        ]
+        VESTI = dohvati_vesti()
+        print("Vesti:", VESTI)
+        posalji_telegram("🧪 TEST 1/2 (obični sažetak)\n\n" + gemini_sazetak(lazni, "Redovan sažetak u 07:00"))
+        posalji_telegram("🧪 TEST 2/2 (večernji pregled)\n\n" + gemini_pregled_dana(lazni, 37))
 
     elif arg == "--now":
         proveri_podesavanja("EMAIL", "PASSWORD", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
