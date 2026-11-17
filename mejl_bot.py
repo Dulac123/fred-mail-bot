@@ -4,6 +4,8 @@ Telegram bot koji prati Gmail i šalje AI sažetak (Gemini):
   - tokom dana (07-23h)  čim stigne 4 nova mejla
   - uveče u 23:00  (pregled celog dana: šta vredi pogledati, šta je spam)
 
+Možeš mu i pisati na Telegramu u bilo kom trenutku (odgovara u roku od par sekundi dok je petlja aktivna).
+
 Pokretanje:
   python3 mejl_bot.py              # pokreće bota (ostavi da radi)
   python3 mejl_bot.py --chat-id    # ispiše tvoj Telegram chat id
@@ -243,8 +245,12 @@ def licnost():
     return tekst
 
 
-def gemini_pozovi(prompt):
-    body = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode()
+def gemini_pozovi(prompt, istorija=None, sistem=None):
+    """prompt: običan tekst. Za razgovor: istorija = [{'role','parts'}...] i sistem = uputstvo o ličnosti."""
+    zahtev = {"contents": istorija or [{"role": "user", "parts": [{"text": prompt}]}]}
+    if sistem:
+        zahtev["systemInstruction"] = {"parts": [{"text": sistem}]}
+    body = json.dumps(zahtev).encode()
     poslednja = None
     for model in GEMINI_MODELI:  # ako jedan model ne radi/sporo je, probamo sledeći
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -374,17 +380,95 @@ def osnovni_sazetak(mejlovi):
 
 
 # --------------------------------------------------------------------- Telegram
-def telegram_api(metoda, **params):
+def telegram_api(metoda, _timeout=30, **params):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/{metoda}"
     data = urllib.parse.urlencode(params).encode()
-    with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=30) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=_timeout) as r:
         return json.load(r)
 
 
-def posalji_telegram(tekst):
+def posalji_telegram(tekst, pamti=True):
+    if pamti:
+        dodaj_u_istoriju("model", tekst)  # da može da priča o onome što je sam poslao (sažeci, vesti...)
     for i in range(0, len(tekst), 4000):  # limit poruke je 4096 znakova
         r = telegram_api("sendMessage", chat_id=TELEGRAM_CHAT_ID, text=tekst[i:i + 4000])
         print(f"Telegram: poslato (message_id={r['result']['message_id']}, chat={r['result']['chat']['id']})")
+
+
+# ------------------------------------------------------------------------ razgovor
+ISTORIJA = []        # samo u memoriji (repo je javan, pa razgovor ne ide u state.json)
+MAX_ISTORIJA = 16
+CHAT_UPUTSTVO = (
+    "Sada ne šalješ sažetak nego pričaš sa mnom uživo na Telegramu, kao najbolji drug. Odgovaraj kratko "
+    "(najviše 2-3 rečenice, bez romana), na srpskom, opušteno, bez markdown formatiranja (bez zvezdica i #). "
+    "Ne počinji svaki odgovor oslovljavanjem. Ako pitam za nešto što si ranije poslao (sažetak, mejl, vest), "
+    "koristi razgovor iznad. Ako ne znaš ili nemaš pristup (npr. ne možeš da pretražuješ internet, ne vidiš "
+    "mejlove koji nisu u razgovoru), reci to iskreno umesto da izmišljaš, naročito za stvarne ljude i vesti. "
+    "Za svaku vest imaš samo naslov, ne i detalje: reci to ako pitam za više, ne dodaj činjenice i ne "
+    "insinuiraj ništa o stvarnim ljudima iznad onoga što piše u naslovu. "
+    "Ako ti pišem 'šta ima' ili slično, samo normalno razgovaraj."
+)
+
+
+def dodaj_u_istoriju(uloga, tekst):
+    ISTORIJA.append({"role": uloga, "parts": [{"text": tekst[:1800]}]})
+    del ISTORIJA[:-MAX_ISTORIJA]
+
+
+def odgovori_na_poruku(tekst):
+    """Vrati Fredov odgovor na moju poruku (uz kratku istoriju razgovora)."""
+    dodaj_u_istoriju("user", tekst)
+    sistem = licnost() + "\n" + CHAT_UPUTSTVO
+    if VESTI:
+        sistem += "\nSkorašnje vesti koje znaš (samo ovo, ništa više): " + " | ".join(VESTI)
+    # Gemini traži da prva poruka bude od korisnika i da se uloge smenjuju
+    istorija = list(ISTORIJA)
+    while istorija and istorija[0]["role"] != "user":
+        istorija.pop(0)
+    spojeno = []
+    for p in istorija:
+        if spojeno and spojeno[-1]["role"] == p["role"]:
+            spojeno[-1] = {"role": p["role"], "parts": [{"text": spojeno[-1]["parts"][0]["text"] + "\n\n" + p["parts"][0]["text"]}]}
+        else:
+            spojeno.append(p)
+    odgovor = gemini_pozovi(None, istorija=spojeno, sistem=sistem)
+    dodaj_u_istoriju("model", odgovor)
+    return odgovor
+
+
+def obradi_poruke(stanje, cekaj=0):
+    """Pročita nove poruke sa Telegrama (long polling do `cekaj` sek) i odgovori na njih."""
+    try:
+        res = telegram_api("getUpdates", _timeout=cekaj + 15, offset=stanje.get("tg_offset", 0),
+                           timeout=cekaj, allowed_updates=json.dumps(["message"]))["result"]
+    except Exception as e:
+        print(f"[{datetime.now(TZ):%H:%M:%S}] Telegram čitanje: {e}")
+        time.sleep(5)
+        return
+    for u in res:
+        stanje["tg_offset"] = u["update_id"] + 1
+        sacuvaj_stanje(stanje)
+        m = u.get("message") or {}
+        if str((m.get("chat") or {}).get("id")) != str(TELEGRAM_CHAT_ID):
+            continue  # ignoriši sve osim mene
+        tekst = (m.get("text") or "").strip()
+        if not tekst or tekst.startswith("/"):
+            if not tekst:
+                posalji_telegram("Brate, ja čitam samo tekst, slike i glasovne mi ne idu. 😅", pamti=False)
+            continue
+        try:
+            telegram_api("sendChatAction", chat_id=TELEGRAM_CHAT_ID, action="typing")
+            posalji_telegram(odgovori_na_poruku(tekst), pamti=False)
+        except Exception as e:
+            print(f"Razgovor greška: {e}")
+            posalji_telegram("Zaglavio mi se mozak, probaj opet za minut, brate. 🤯", pamti=False)
+
+
+def slusaj(stanje, sekundi):
+    """Umesto spavanja: slušaj poruke narednih `sekundi` sekundi."""
+    do = time.time() + sekundi
+    while time.time() < do:
+        obradi_poruke(stanje, cekaj=max(1, min(20, int(do - time.time()))))
 
 
 # ------------------------------------------------------------------ glavna logika
@@ -531,7 +615,7 @@ def petlja(sati=None):
             raise
         except Exception as e:
             print(f"[{datetime.now(TZ):%H:%M:%S}] Greška: {e}")
-        time.sleep(PROVERA_SEK)
+        slusaj(stanje, PROVERA_SEK)
 
 
 # ---------------------------------------------------------------------- CLI
@@ -573,7 +657,9 @@ if __name__ == "__main__":
     elif arg == "--once":
         # jedna provera pa kraj (za server/cron/GitHub Actions)
         proveri_podesavanja("EMAIL", "PASSWORD", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
-        jedan_krug(pripremi_stanje())
+        st = pripremi_stanje()
+        jedan_krug(st)
+        obradi_poruke(st)
 
     elif arg == "--demo":
         # test: 3 izmišljena mejla -> pravi sažetak i pregled dana na Telegram (ne dira state.json)
@@ -590,6 +676,19 @@ if __name__ == "__main__":
         print("Vesti:", VESTI)
         posalji_telegram("🧪 TEST 1/2 (obični sažetak)\n\n" + gemini_sazetak(lazni, "Redovan sažetak u 07:00"))
         posalji_telegram("🧪 TEST 2/2 (večernji pregled)\n\n" + gemini_pregled_dana(lazni, 37))
+
+    elif arg == "--razgovor":
+        # test razgovora u terminalu (ništa ne šalje na Telegram): python3 mejl_bot.py --razgovor
+        proveri_podesavanja("GEMINI_API_KEY")
+        VESTI = dohvati_vesti()
+        dodaj_u_istoriju("model", "Vesti za danas: " + " | ".join(VESTI))
+        while True:
+            try:
+                t = input("ti> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                break
+            if t:
+                print("fred>", odgovori_na_poruku(t))
 
     elif arg == "--now":
         proveri_podesavanja("EMAIL", "PASSWORD", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
