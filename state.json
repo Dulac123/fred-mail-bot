@@ -1,16 +1,17 @@
 {
-  "last_uid": 22406,
+  "last_uid": 22410,
   "done": {
-    "2026-11-17 07:00": true
+    "2026-11-17 07:00": true,
+    "2026-11-17 23:00": true
   },
-  "dan": "2026-11-17",
-  "dan_uid": 22381,
+  "dan": "2026-11-18",
+  "dan_uid": 22410,
   "vesti": [
-    "Tramp je izjavio da mu ne bi smetalo da se D\u017eensen Huang vrati na \u010delo kompanije Nvidia.",
-    "Profesor sa Kalteka vi\u0161e ne ocenjuje doma\u0107e zadatke jer svi koriste ve\u0161ta\u010dku inteligenciju.",
-    "Upravni odbor Nvidije ne razmatra povratak D\u017eensena Huanga na mesto generalnog direktora.",
-    "Prijavljeni su prekidi u radu banaka Bank of America, Chase, U.S. Bank, Wells Fargo i servisa Zelle.",
-    "AT&T tvrdi da je Comcast-ov internet na opti\u010dki pogon zapravo obi\u010dni kablovski."
+    "Biv\u0161i direktor Nvidije Jensen Huang izrazio je interesovanje za povratak u kompaniju nakon skandala.",
+    "Tramp tra\u017ei nova renoviranja Bele ku\u0107e nakon poraza republikanaca na izborima na sredini mandata.",
+    "Lisa Kuk iz Federalnih rezervi odbila je da prisustvuje saslu\u0161anju u Beloj ku\u0107i zbog pristrasne komisije.",
+    "Huang ka\u017ee da bi mu bila \u010dast da se vrati u Nvidiju po\u0161to je pristao da svedo\u010di pred Kongresom.",
+    "Efekti nuklearne detonacije u niskoj Zemljinoj orbiti."
   ],
   "tg_offset": 25096503
 }
