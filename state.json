@@ -1,16 +1,17 @@
 {
-  "last_uid": 22436,
+  "last_uid": 22440,
   "done": {
-    "2026-11-18 07:00": true
+    "2026-11-18 07:00": true,
+    "2026-11-18 23:00": true
   },
-  "dan": "2026-11-18",
-  "dan_uid": 22410,
+  "dan": "2026-11-19",
+  "dan_uid": 22440,
   "vesti": [
-    "Biv\u0161i direktor Nvidije Jensen Huang izrazio je interesovanje za povratak u kompaniju nakon skandala.",
-    "Tramp tra\u017ei nova renoviranja Bele ku\u0107e nakon poraza republikanaca na izborima na sredini mandata.",
-    "Lisa Kuk iz Federalnih rezervi odbila je da prisustvuje saslu\u0161anju u Beloj ku\u0107i zbog pristrasne komisije.",
-    "Huang ka\u017ee da bi mu bila \u010dast da se vrati u Nvidiju po\u0161to je pristao da svedo\u010di pred Kongresom.",
-    "Efekti nuklearne detonacije u niskoj Zemljinoj orbiti."
+    "V.d. direktorka Nvidije poru\u010dila zaposlenima \u201eidemo dalje\u201c nakon odlaska D\u017eensena Huanga.",
+    "Bela ku\u0107a ka\u017ee demokratama da istrage moraju po\u010deti iznova jer se zahtevi ne prenose.",
+    "Trampova administracija razmatra da natera ameri\u010dke firme da prijave kori\u0161\u0107enje kineske ve\u0161ta\u010dke inteligencije.",
+    "Jo\u0161 jedna AI kompanija \u0107e uskoro vredeti vi\u0161e od bilion dolara.",
+    "Guglov li\u010dni asistent D\u017eemini \u201eTasks\u201c sada je besplatan."
   ],
   "tg_offset": 25096503
 }
