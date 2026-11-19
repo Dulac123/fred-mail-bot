@@ -1,16 +1,17 @@
 {
-  "last_uid": 22461,
+  "last_uid": 22470,
   "done": {
-    "2026-11-19 07:00": true
+    "2026-11-19 07:00": true,
+    "2026-11-19 23:00": true
   },
   "dan": "2026-11-19",
   "dan_uid": 22440,
   "vesti": [
-    "V.d. direktorka Nvidije poru\u010dila zaposlenima \u201eidemo dalje\u201c nakon odlaska D\u017eensena Huanga.",
-    "Bela ku\u0107a ka\u017ee demokratama da istrage moraju po\u010deti iznova jer se zahtevi ne prenose.",
-    "Trampova administracija razmatra da natera ameri\u010dke firme da prijave kori\u0161\u0107enje kineske ve\u0161ta\u010dke inteligencije.",
-    "Jo\u0161 jedna AI kompanija \u0107e uskoro vredeti vi\u0161e od bilion dolara.",
-    "Guglov li\u010dni asistent D\u017eemini \u201eTasks\u201c sada je besplatan."
+    "Anthropic je na berzi dostigao vrednost od dva biliona dolara.",
+    "Hiljade zaposlenih i investitora kompanije Anthropic \u0107e se obogatiti.",
+    "Tramp je u septembru kupovao akcije kompanija Nvidia, Palantir i SpaceX.",
+    "SEC istra\u017euje kompaniju Nvidia usred odlaska direktora D\u017eensena Huanga.",
+    "Britanska vlada primorana da prizna da je Eplu izdala tajni nalog za enkripciju."
   ],
   "tg_offset": 25096503
 }
