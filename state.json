@@ -1,16 +1,17 @@
 {
-  "last_uid": 22509,
+  "last_uid": 22511,
   "done": {
-    "2026-11-20 07:00": true
+    "2026-11-20 07:00": true,
+    "2026-11-20 23:00": true
   },
-  "dan": "2026-11-20",
-  "dan_uid": 22470,
+  "dan": "2026-11-21",
+  "dan_uid": 22511,
   "vesti": [
-    "Anthropic je na berzi dostigao vrednost od dva biliona dolara.",
-    "Hiljade zaposlenih i investitora kompanije Anthropic \u0107e se obogatiti.",
-    "Tramp je u septembru kupovao akcije kompanija Nvidia, Palantir i SpaceX.",
-    "SEC istra\u017euje kompaniju Nvidia usred odlaska direktora D\u017eensena Huanga.",
-    "Britanska vlada primorana da prizna da je Eplu izdala tajni nalog za enkripciju."
+    "Tramp ka\u017ee da bi voleo da biv\u0161i direktor Nvidie D\u017eensen Huang dobije drugu \u0161ansu.",
+    "\u201eLaganje\u201c D\u017eensena Huanga uznemirilo je odbor Nvidie pre njegove ostavke.",
+    "Nasdaq je izbrisao dobitke iz 2026. godine, a S&P i Dow su u\u0161li u korekcije.",
+    "Akcije Anthropica se ru\u0161e, a AI akcije su izgubile vi\u0161e od 50% vrednosti za 5 meseci.",
+    "Ra\u010dunovodstvo Nvidie je u fokusu istrage ameri\u010dke Komisije za hartije od vrednosti."
   ],
   "tg_offset": 25096503
 }
