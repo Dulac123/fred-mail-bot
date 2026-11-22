@@ -1,16 +1,17 @@
 {
-  "last_uid": 22530,
+  "last_uid": 22532,
   "done": {
-    "2026-11-21 07:00": true
+    "2026-11-21 07:00": true,
+    "2026-11-21 23:00": true
   },
-  "dan": "2026-11-21",
-  "dan_uid": 22511,
+  "dan": "2026-11-22",
+  "dan_uid": 22532,
   "vesti": [
-    "Tramp ka\u017ee da bi voleo da biv\u0161i direktor Nvidie D\u017eensen Huang dobije drugu \u0161ansu.",
-    "\u201eLaganje\u201c D\u017eensena Huanga uznemirilo je odbor Nvidie pre njegove ostavke.",
-    "Nasdaq je izbrisao dobitke iz 2026. godine, a S&P i Dow su u\u0161li u korekcije.",
-    "Akcije Anthropica se ru\u0161e, a AI akcije su izgubile vi\u0161e od 50% vrednosti za 5 meseci.",
-    "Ra\u010dunovodstvo Nvidie je u fokusu istrage ameri\u010dke Komisije za hartije od vrednosti."
+    "SEC istra\u017euje Nvidiju usred odlaska generalnog direktora D\u017eensena Huanga.",
+    "D\u017eensen Huang je poni\u017eavanje u Nvidiji u\u010dinio svakodnevnom rutinom.",
+    "Tramp je naredio saveznim ugovara\u010dima da se konsultuju sa Belom ku\u0107om pre odgovaranja Kongresu.",
+    "Kejti Zakarija ka\u017ee da nije otpu\u0161tena sa mesta sekretarke za \u0161tampu Bele ku\u0107e.",
+    "Prva dama Melanija Tramp do\u010dekala je bo\u017ei\u0107nu jelku u Beloj ku\u0107i."
   ],
   "tg_offset": 25096503
 }
