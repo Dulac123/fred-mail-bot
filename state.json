@@ -1,16 +1,17 @@
 {
-  "last_uid": 22553,
+  "last_uid": 22555,
   "done": {
-    "2026-11-22 07:00": true
+    "2026-11-22 07:00": true,
+    "2026-11-22 23:00": true
   },
-  "dan": "2026-11-22",
-  "dan_uid": 22532,
+  "dan": "2026-11-23",
+  "dan_uid": 22555,
   "vesti": [
-    "SEC istra\u017euje Nvidiju usred odlaska generalnog direktora D\u017eensena Huanga.",
-    "D\u017eensen Huang je poni\u017eavanje u Nvidiji u\u010dinio svakodnevnom rutinom.",
-    "Tramp je naredio saveznim ugovara\u010dima da se konsultuju sa Belom ku\u0107om pre odgovaranja Kongresu.",
-    "Kejti Zakarija ka\u017ee da nije otpu\u0161tena sa mesta sekretarke za \u0161tampu Bele ku\u0107e.",
-    "Prva dama Melanija Tramp do\u010dekala je bo\u017ei\u0107nu jelku u Beloj ku\u0107i."
+    "Senator ka\u017ee da je navodna afera D\u017eensena Huanga bila najskuplji seks od Jelene Trojanske.",
+    "Akcije kompanije Nvidia imaju problem sa buba\u0161vabama.",
+    "Kako je \u201eprava hrana\u201c skoro uni\u0161tila Belu ku\u0107u.",
+    "\u0160ef obave\u0161tajne slu\u017ebe ka\u017ee da je Trampov opis Putina kao prijatelja sasvim prikladan.",
+    "Da li je softver oduvek bio previ\u0161e slo\u017een za ljude?"
   ],
   "tg_offset": 25096503
 }
