@@ -1,16 +1,17 @@
 {
-  "last_uid": 22577,
+  "last_uid": 22586,
   "done": {
-    "2026-11-23 07:00": true
+    "2026-11-23 07:00": true,
+    "2026-11-23 23:00": true
   },
   "dan": "2026-11-23",
   "dan_uid": 22555,
   "vesti": [
-    "Senator ka\u017ee da je navodna afera D\u017eensena Huanga bila najskuplji seks od Jelene Trojanske.",
-    "Akcije kompanije Nvidia imaju problem sa buba\u0161vabama.",
-    "Kako je \u201eprava hrana\u201c skoro uni\u0161tila Belu ku\u0107u.",
-    "\u0160ef obave\u0161tajne slu\u017ebe ka\u017ee da je Trampov opis Putina kao prijatelja sasvim prikladan.",
-    "Da li je softver oduvek bio previ\u0161e slo\u017een za ljude?"
+    "Po\u010delo je glasanje za ceremoniju pomilovanja nacionalne \u0107urke za Dan zahvalnosti 2026. godine.",
+    "Tramp je rekao za CNBC da je napravio dogovor da vrati D\u017eensena Huanga u Nvidiju.",
+    "Prva dama Melanija Tramp do\u010dekala je ovogodi\u0161nju bo\u017ei\u0107nu jelku Bele ku\u0107e.",
+    "Epl je uklonio moju aplikaciju otvorenog koda iz EU prodavnica aplikacija nakon 9 godina.",
+    "Sajberlik je objavio izvr\u0161ni fajl GTA 6 verzije za Eksboks."
   ],
   "tg_offset": 25096503
 }
