@@ -1,16 +1,17 @@
 {
-  "last_uid": 22622,
+  "last_uid": 22623,
   "done": {
-    "2026-11-24 07:00": true
+    "2026-11-24 07:00": true,
+    "2026-11-24 23:00": true
   },
-  "dan": "2026-11-24",
-  "dan_uid": 22586,
+  "dan": "2026-11-25",
+  "dan_uid": 22623,
   "vesti": [
-    "Po\u010delo je glasanje za ceremoniju pomilovanja nacionalne \u0107urke za Dan zahvalnosti 2026. godine.",
-    "Tramp je rekao za CNBC da je napravio dogovor da vrati D\u017eensena Huanga u Nvidiju.",
-    "Prva dama Melanija Tramp do\u010dekala je ovogodi\u0161nju bo\u017ei\u0107nu jelku Bele ku\u0107e.",
-    "Epl je uklonio moju aplikaciju otvorenog koda iz EU prodavnica aplikacija nakon 9 godina.",
-    "Sajberlik je objavio izvr\u0161ni fajl GTA 6 verzije za Eksboks."
+    "Jensen Huang se izvinjava zaposlenima u kompaniji Nvidia i ka\u017ee da je na terapiji.",
+    "Jensen Huang je rekao zaposlenima da kompaniji Nvidia nije potreban plan sukcesije.",
+    "Tramp je pomilovao \u0107urke na novom helidromu Bele ku\u0107e.",
+    "CIA hakovana.",
+    "Microsoft je proglasio \u201ecrvenu uzbunu\u201c nakon istorijskog prekida rada."
   ],
   "tg_offset": 25096503
 }
