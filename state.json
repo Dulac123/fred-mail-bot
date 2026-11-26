@@ -1,16 +1,17 @@
 {
-  "last_uid": 22692,
+  "last_uid": 22693,
   "done": {
-    "2026-11-26 07:00": true
+    "2026-11-26 07:00": true,
+    "2026-11-26 23:00": true
   },
-  "dan": "2026-11-26",
-  "dan_uid": 22664,
+  "dan": "2026-11-27",
+  "dan_uid": 22693,
   "vesti": [
-    "Nekoliko pitanja za \u010doveka koji je i\u0161ao na ronjenje u retencioni bazen Home Depota.",
-    "Sveto sranje sveto sranje sveto sranje sveto sranje: veli\u010dina onoga \u0161to se sada de\u0161ava.",
-    "Bela ku\u0107a objavljuje takozvane \u201ehype\u201c video snimke koji kombinuju stvarne snimke rata u Iranu sa insertima iz filmova i video igara.",
-    "Pritisak Bele ku\u0107e da se D\u017eensen Huang vrati na funkciju.",
-    "Akcije Nvidie nastavljaju da padaju i o\u010digledno je da D\u017eensen nije bio jedini problem."
+    "Da li je kompaniji Nvidia zaista potreban njen briljantni ludak?",
+    "Predsednik Tramp je uru\u010dio Rudiju \u0110ulijaniju Medalju slobode.",
+    "Tehni\u010dki direktor kompanije \"RansomwareHelp\" optu\u017een je za prevaru.",
+    "YouTube Ad Punisher automatski ponovo u\u010ditava stranicu kada krene reklama.",
+    "Predstavljen je program pod nazivom Fuck_data_brokers.py."
   ],
   "tg_offset": 25096503
 }
