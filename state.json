@@ -1,16 +1,17 @@
 {
-  "last_uid": 22656,
+  "last_uid": 22664,
   "done": {
-    "2026-11-25 07:00": true
+    "2026-11-25 07:00": true,
+    "2026-11-25 23:00": true
   },
-  "dan": "2026-11-25",
-  "dan_uid": 22623,
+  "dan": "2026-11-26",
+  "dan_uid": 22664,
   "vesti": [
-    "Jensen Huang se izvinjava zaposlenima u kompaniji Nvidia i ka\u017ee da je na terapiji.",
-    "Jensen Huang je rekao zaposlenima da kompaniji Nvidia nije potreban plan sukcesije.",
-    "Tramp je pomilovao \u0107urke na novom helidromu Bele ku\u0107e.",
-    "CIA hakovana.",
-    "Microsoft je proglasio \u201ecrvenu uzbunu\u201c nakon istorijskog prekida rada."
+    "Nekoliko pitanja za \u010doveka koji je i\u0161ao na ronjenje u retencioni bazen Home Depota.",
+    "Sveto sranje sveto sranje sveto sranje sveto sranje: veli\u010dina onoga \u0161to se sada de\u0161ava.",
+    "Bela ku\u0107a objavljuje takozvane \u201ehype\u201c video snimke koji kombinuju stvarne snimke rata u Iranu sa insertima iz filmova i video igara.",
+    "Pritisak Bele ku\u0107e da se D\u017eensen Huang vrati na funkciju.",
+    "Akcije Nvidie nastavljaju da padaju i o\u010digledno je da D\u017eensen nije bio jedini problem."
   ],
   "tg_offset": 25096503
 }
