@@ -1,16 +1,17 @@
 {
-  "last_uid": 22718,
+  "last_uid": 22725,
   "done": {
-    "2026-11-27 07:00": true
+    "2026-11-27 07:00": true,
+    "2026-11-27 23:00": true
   },
   "dan": "2026-11-27",
   "dan_uid": 22693,
   "vesti": [
-    "Da li je kompaniji Nvidia zaista potreban njen briljantni ludak?",
-    "Predsednik Tramp je uru\u010dio Rudiju \u0110ulijaniju Medalju slobode.",
-    "Tehni\u010dki direktor kompanije \"RansomwareHelp\" optu\u017een je za prevaru.",
-    "YouTube Ad Punisher automatski ponovo u\u010ditava stranicu kada krene reklama.",
-    "Predstavljen je program pod nazivom Fuck_data_brokers.py."
+    "Nvidia Blackwell \u010dipovi prona\u0111eni na lokaciji u Kini povezanoj sa Alis Huang.",
+    "OpenAI podneo protivtu\u017ebu protiv Apple-a zbog kra\u0111e poslovnih tajni.",
+    "Tramp pose\u0107uje polaganje kamena temeljca za proizvo\u0111a\u010da poluprovodnika koji snabdeva Nvidia-u.",
+    "Dr\u017eave tu\u017ee SpaceX kako bi zaustavile Grok u generisanju neprikladnog sadr\u017eaja.",
+    "Vird\u017einija poklonila Beloj ku\u0107i \u0161estu Nacionalnu jelku."
   ],
   "tg_offset": 25096503
 }
